@@ -18,22 +18,39 @@ pub fn top_sort(prerequisites: Vec<Vec<i32>>, num_courses: i32) -> Vec<i32> {
     let mut sol: Vec<i32> = Vec::new();
     let mut discovered: Vec<bool> = (0..num_courses).map(|_| false).collect();
     let al = create_adj_lists(&prerequisites, num_courses);
+    let mut valid: bool = true;
     for i in 0..num_courses {
+        if !valid {
+            break;
+        }
+
         if !discovered[i as usize] {
-            dfs(&al, i as i32, &mut discovered, &mut sol);
+            dfs(&al, i as i32, &mut discovered, &mut sol, &mut valid);
         }
     }
-    sol.into_iter().rev().collect()
+
+    match valid {
+        true => sol.into_iter().rev().collect(),
+        false => vec![],
+    }
 }
 
-pub fn dfs(graph: &Vec<Vec<i32>>, node: i32, discovered: &mut Vec<bool>, sol: &mut Vec<i32>) {
+pub fn dfs(
+    graph: &Vec<Vec<i32>>,
+    node: i32,
+    discovered: &mut Vec<bool>,
+    sol: &mut Vec<i32>,
+    valid: &mut bool,
+) {
     if !discovered[node as usize] {
         discovered[node as usize] = true;
     }
 
     for prereq in &graph[node as usize] {
         if !discovered[*prereq as usize] {
-            dfs(&graph, *prereq, discovered, sol);
+            dfs(&graph, *prereq, discovered, sol, valid);
+        } else if discovered[*prereq as usize] && !sol.contains(prereq) {
+            *valid = false;
         }
     }
 
@@ -48,5 +65,11 @@ mod tests {
     fn case1() {
         let prerequisites = [vec![1, 0], vec![2, 0], vec![3, 1], vec![3, 2]].to_vec();
         assert_eq!(find_order(4, prerequisites), [0, 2, 1, 3].to_vec())
+    }
+
+    #[test]
+    fn case2() {
+        let prerequisites = [vec![1, 0], vec![0, 1]].to_vec();
+        assert_eq!(find_order(2, prerequisites), [].to_vec())
     }
 }
