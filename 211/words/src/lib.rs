@@ -1,14 +1,11 @@
-use std::{
-    borrow::{Borrow, BorrowMut},
-    collections::HashMap,
-};
+// misread and did not see the '.' component, sad
 
-type Link = Box<Node>;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 struct Node {
     pub key: char,
-    pub next: HashMap<char, Link>,
+    pub next: HashMap<char, Box<Node>>,
 }
 
 impl Node {
@@ -46,17 +43,22 @@ impl WordDictionary {
 
     fn search(&self, word: String) -> bool {
         let p = word.clone();
-        let mut chars = p.chars();
-        let mut ch = chars.next();
+        let mut path = p.chars();
 
-        for c in chars {
-            match node {
-                None => return false,
-                Some(n) => node = n.next.get(&c),
+        // first, we get the entry for the first letter and check if it is in the dict
+        match path.next() {
+            Some(start) => {
+                let mut n = self.dict.get(&start);
+                for c in path {
+                    if n.is_none() {
+                        return false;
+                    }
+                    n = n.unwrap().next.get(&c)
+                }
+                n.is_some()
             }
+            None => false,
         }
-
-        return true;
     }
 }
 
@@ -69,7 +71,6 @@ mod tests {
         let mut x = WordDictionary::new();
         assert_eq!(x.search("Hello".to_string()), false);
         x.add_word("Hello".to_string());
-        println!("{:?}", x);
         assert_eq!(x.search("Hello".to_string()), true);
         assert_eq!(x.search("Hellos".to_string()), false);
     }
